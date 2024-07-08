@@ -1,0 +1,47 @@
+services:
+  #Database
+  lakeview_db:
+    image: mariadb:11.3.2
+    volumes:
+      - ./db_data:/var/lib/mysql
+    restart: always
+    env_file: .env
+    environment:
+      MARIADB_ROOT_PASSWORD: $MARIADB_ROOT_PASSWORD
+      MARIADB_DATABASE: wordpress
+    container_name: lakeview_db
+  #Web
+  lakeview_wp:
+    depends_on:
+      - lakeview_db
+    build:
+      dockerfile: ./Dockerfile
+      context: .
+    ports:
+      - 8086:80
+    restart: always
+    env_file: .env
+    environment:
+      WORDPRESS_DB_NAME: wordpress
+      WORDPRESS_DB_HOST: lakeview_db
+      WORDPRESS_DB_USER: $MYSQL_USER
+      WORDPRESS_DB_PASSWORD: $MYSQL_PASSWORD
+      WORDPRESS_TABLE_PREFIX: wp_
+    container_name: lakeview_wp
+    volumes:
+      - ./wp-content:/var/www/html/wp-content
+  #PhpMyAdmin
+  lakeview_myadmin:
+    image: phpmyadmin:latest
+    container_name: lakeview_myadmin
+    restart: "no"
+    ports:
+      - 5006:80
+    environment:
+      PMA_HOST: lakeview_db
+      UPLOAD_LIMIT: 100M
+    depends_on:
+      - lakeview_db
+volumes:
+  db_data:
+  wp-content:
